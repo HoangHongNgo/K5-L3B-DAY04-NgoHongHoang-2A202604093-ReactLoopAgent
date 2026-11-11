@@ -10,6 +10,7 @@ CONFIG = {
     'openrouter': ('OPENROUTER_API_KEY', 'https://openrouter.ai/api/v1/chat/completions'),
     'anthropic': ('ANTHROPIC_API_KEY', 'https://api.anthropic.com/v1/messages'),
 }
+OPENROUTER_MAX_TOKENS = 1024
 
 
 def post_json(url, headers, payload):
@@ -45,6 +46,9 @@ class Provider:
         if self.name == 'anthropic':
             return self._anthropic(messages, schemas)
         payload = {'model': self.model, 'messages': messages}
+        if self.name == 'openrouter':
+            # Tránh OpenRouter dự trù toàn bộ giới hạn output của model (16.384 tokens).
+            payload['max_tokens'] = OPENROUTER_MAX_TOKENS
         if schemas:
             payload['tools'] = schemas
         data = post_json(self.url, {'Authorization': f'Bearer {self.key}'}, payload)

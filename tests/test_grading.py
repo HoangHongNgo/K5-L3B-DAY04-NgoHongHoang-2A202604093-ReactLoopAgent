@@ -55,7 +55,14 @@ class GradingTests(unittest.TestCase):
     def test_partial_average_is_not_final(self):
         summary = summarize([{'grade':{'score':80}}, {'grade':{'score':None}}])
         self.assertIsNone(summary['score_0_100'])
+        self.assertIsNone(summary['score_variance'])
+        self.assertIsNone(summary['score_std_dev'])
         self.assertEqual(summary['partial_mean_0_100'], 80)
+    def test_full_run_reports_population_dispersion(self):
+        summary = summarize([{'grade':{'score':60}}, {'grade':{'score':80}}, {'grade':{'score':100}}])
+        self.assertEqual(summary['score_0_100'], 80)
+        self.assertEqual(summary['score_variance'], 266.67)
+        self.assertEqual(summary['score_std_dev'], 16.33)
     def test_noisy_status_and_injection(self):
         noisy = ScenarioTools('noisy_status').execute('get_status', {'provider':'github','component':'Actions'})
         self.assertEqual(len(noisy['distractors']), 40)

@@ -26,6 +26,20 @@ class ScenarioTests(unittest.TestCase):
 
 
 class EvidenceGateTests(unittest.TestCase):
+    def test_requested_linked_incident_is_read_before_final(self):
+        url = 'https://stspg.io/7pwv28hvkmz8'
+        fake = FakeProvider([
+            tool_call('1', 'get_incident_details', '{"provider":"github","incident_id":"h02n9572mx9y"}'),
+            final('Đã xong. ' + url),
+            tool_call('2', 'get_incident_details', '{"provider":"github","incident_id":"xr3myzj7ms51"}'),
+            final('Đã đọc incident gộp. ' + url),
+        ])
+        result = run_agent('Theo liên kết incident để tìm nguyên nhân', fake, StatusTools(), max_steps=4)
+        self.assertEqual(result['status'], 'completed')
+        self.assertTrue(any(x['event'] == 'validation_missing_followup' for x in result['trace']))
+        self.assertEqual([x['result']['id'] for x in result['trace'] if x['event'] == 'tool'],
+                         ['h02n9572mx9y', 'xr3myzj7ms51'])
+
     def test_missing_url_gets_revision_within_budget(self):
         url = 'https://stspg.io/pjgptg3cfc6n'
         fake = FakeProvider([tool_call('1', 'get_incident_details', '{"provider":"github","incident_id":"xr3myzj7ms51"}'),

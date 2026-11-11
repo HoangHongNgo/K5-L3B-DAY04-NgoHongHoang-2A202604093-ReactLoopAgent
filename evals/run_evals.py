@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent import run_agent
-from providers import Provider
+from providers import Provider, OPENROUTER_MAX_TOKENS
 from scenarios import ScenarioTools
 from grading import grade_case, summarize, bonus_points
 from bonus.tools import BonusTools
@@ -66,13 +66,18 @@ def main():
     report = {'summary': summarize(results), 'config': {'provider': args.provider, 'model': args.model,
               'judge_provider': args.judge_provider, 'judge_model': args.judge_model, 'max_steps': args.max_steps,
               'dataset': 'bonus' if args.bonus else 'core'}, 'cases': results}
+    if args.provider == 'openrouter':
+        report['config']['agent_max_tokens'] = OPENROUTER_MAX_TOKENS
+    if args.judge_provider == 'openrouter':
+        report['config']['judge_max_tokens'] = OPENROUTER_MAX_TOKENS
     summary = report['summary']
     if args.bonus:
         full_run = not args.case and len(selected) == len(cases)
         report['summary']['bonus_points_0_15'] = bonus_points(summary['score_0_100'], full_run)
         print(f"Điểm bonus tham khảo: {summary['bonus_points_0_15']}/15 (chỉ tính khi chấm đủ toàn bộ case).")
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f"Điểm: {summary['score_0_100']}/100; đã chấm {summary['scored_cases']}/{summary['total_cases']} case. File: {args.output}")
+    spread = f" ± {summary['score_std_dev']}" if summary['score_std_dev'] is not None else ''
+    print(f"Điểm: {summary['score_0_100']}{spread}/100; phương sai: {summary['score_variance']}; đã chấm {summary['scored_cases']}/{summary['total_cases']} case. File: {args.output}")
     if summary['score_0_100'] is None:
         print('Chưa có điểm tổng do có case chưa được chấm; xem reason trong file.', file=sys.stderr)
         return 1

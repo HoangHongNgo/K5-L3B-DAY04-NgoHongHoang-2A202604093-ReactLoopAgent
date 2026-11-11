@@ -1,5 +1,6 @@
 """Chấm 0–100: rubric LLM judge + một số kiểm tra trace bằng code."""
 import json
+from statistics import pstdev, pvariance
 
 DIMENSIONS = {'factuality': 40, 'completeness': 25, 'evidence': 20, 'boundaries': 15}
 JUDGE_INSTRUCTIONS = '''Bạn là giám khảo độc lập. Chấm câu trả lời agent theo question, expected và trace được cung cấp.
@@ -82,6 +83,8 @@ def summarize(results):
     complete = len(scored) == len(results) and bool(results)
     return {'total_cases': len(results), 'scored_cases': len(scored), 'unscored_cases': len(results) - len(scored),
             'score_0_100': round(sum(scored) / len(scored), 2) if complete else None,
+            'score_variance': round(pvariance(scored), 2) if complete else None,
+            'score_std_dev': round(pstdev(scored), 2) if complete else None,
             'partial_mean_0_100': round(sum(scored) / len(scored), 2) if scored and not complete else None}
 
 
